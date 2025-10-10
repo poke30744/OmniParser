@@ -49,7 +49,9 @@ def sampling_loop_sync(
     only_n_most_recent_images: int | None = 2,
     max_tokens: int = 4096,
     omniparser_url: str,
-    save_folder: str = "./uploads"
+    save_folder: str = "./uploads",
+    custom_base_url: str = "",
+    custom_model_name: str = ""
 ):
     """
     Synchronous agentic sampling loop for the assistant/tool interaction of computer use.
@@ -64,7 +66,8 @@ def sampling_loop_sync(
             api_key=api_key, 
             api_response_callback=api_response_callback,
             max_tokens=max_tokens,
-            only_n_most_recent_images=only_n_most_recent_images
+            only_n_most_recent_images=only_n_most_recent_images,
+            custom_base_url=custom_base_url
         )
     elif model in set(["omniparser + gpt-4o", "omniparser + o1", "omniparser + o3-mini", "omniparser + R1", "omniparser + qwen2.5vl"]):
         actor = VLMAgent(
@@ -74,7 +77,9 @@ def sampling_loop_sync(
             api_response_callback=api_response_callback,
             output_callback=output_callback,
             max_tokens=max_tokens,
-            only_n_most_recent_images=only_n_most_recent_images
+            only_n_most_recent_images=only_n_most_recent_images,
+            custom_base_url=custom_base_url,
+            custom_model_name=custom_model_name
         )
     elif model in set(["omniparser + gpt-4o-orchestrated", "omniparser + o1-orchestrated", "omniparser + o3-mini-orchestrated", "omniparser + R1-orchestrated", "omniparser + qwen2.5vl-orchestrated"]):
         actor = VLMOrchestratedAgent(
@@ -85,7 +90,9 @@ def sampling_loop_sync(
             output_callback=output_callback,
             max_tokens=max_tokens,
             only_n_most_recent_images=only_n_most_recent_images,
-            save_folder=save_folder
+            save_folder=save_folder,
+            custom_base_url=custom_base_url,
+            custom_model_name=custom_model_name
         )
     else:
         raise ValueError(f"Model {model} not supported")

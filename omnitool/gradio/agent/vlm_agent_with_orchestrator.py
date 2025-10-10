@@ -74,8 +74,13 @@ class VLMOrchestratedAgent:
         only_n_most_recent_images: int | None = None,
         print_usage: bool = True,
         save_folder: str = None,
+        custom_base_url: str = "",
+        custom_model_name: str = ""
     ):
-        if model == "omniparser + gpt-4o" or model == "omniparser + gpt-4o-orchestrated":
+        # Use custom model name if provided, otherwise use default mapping
+        if custom_model_name:
+            self.model = custom_model_name
+        elif model == "omniparser + gpt-4o" or model == "omniparser + gpt-4o-orchestrated":
             self.model = "gpt-4o-2024-11-20"
         elif model == "omniparser + R1" or model == "omniparser + R1-orchestrated":
             self.model = "deepseek-r1-distill-llama-70b"
@@ -91,6 +96,7 @@ class VLMOrchestratedAgent:
 
         self.provider = provider
         self.api_key = api_key
+        self.custom_base_url = custom_base_url
         self.api_response_callback = api_response_callback
         self.max_tokens = max_tokens
         self.only_n_most_recent_images = only_n_most_recent_images
@@ -153,13 +159,14 @@ class VLMOrchestratedAgent:
 
         start = time.time()
         if "gpt" in self.model or "o1" in self.model or "o3-mini" in self.model:
+            base_url = self.custom_base_url if self.custom_base_url else "https://api.openai.com/v1"
             vlm_response, token_usage = run_oai_interleaved(
                 messages=planner_messages,
                 system=system,
                 model_name=self.model,
                 api_key=self.api_key,
                 max_tokens=self.max_tokens,
-                provider_base_url="https://api.openai.com/v1",
+                provider_base_url=base_url,
                 temperature=0,
             )
             print(f"oai token usage: {token_usage}")
@@ -182,13 +189,14 @@ class VLMOrchestratedAgent:
             self.total_token_usage += token_usage
             self.total_cost += (token_usage * 0.99 / 1000000)
         elif "qwen" in self.model:
+            base_url = self.custom_base_url if self.custom_base_url else "https://dashscope.aliyuncs.com/compatible-mode/v1"
             vlm_response, token_usage = run_oai_interleaved(
                 messages=planner_messages,
                 system=system,
                 model_name=self.model,
                 api_key=self.api_key,
                 max_tokens=min(2048, self.max_tokens),
-                provider_base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+                provider_base_url=base_url,
                 temperature=0,
             )
             print(f"qwen token usage: {token_usage}")
@@ -381,13 +389,14 @@ IMPORTANT NOTES:
         plan_prompt = self._get_plan_prompt(self._task)
         input_message = copy.deepcopy(messages)
         input_message.append({"role": "user", "content": plan_prompt})
+        base_url = self.custom_base_url if self.custom_base_url else "https://api.openai.com/v1"
         vlm_response, token_usage = run_oai_interleaved(
                 messages=input_message,
                 system="",
                 model_name=self.model,
                 api_key=self.api_key,
                 max_tokens=self.max_tokens,
-                provider_base_url="https://api.openai.com/v1",
+                provider_base_url=base_url,
                 temperature=0,
             )
         plan = extract_data(vlm_response, "json")
@@ -413,13 +422,14 @@ IMPORTANT NOTES:
         update_ledger_prompt = ORCHESTRATOR_LEDGER_PROMPT.format(task=self._task)
         input_message = copy.deepcopy(messages)
         input_message.append({"role": "user", "content": update_ledger_prompt})
+        base_url = self.custom_base_url if self.custom_base_url else "https://api.openai.com/v1"
         vlm_response, token_usage = run_oai_interleaved(
                 messages=input_message,
                 system="",
                 model_name=self.model,
                 api_key=self.api_key,
                 max_tokens=self.max_tokens,
-                provider_base_url="https://api.openai.com/v1",
+                provider_base_url=base_url,
                 temperature=0,
             )
         updated_ledger = extract_data(vlm_response, "json")

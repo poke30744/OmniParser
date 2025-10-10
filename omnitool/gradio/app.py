@@ -60,6 +60,10 @@ def setup_state(state):
         state["anthropic_api_key"] = os.getenv("ANTHROPIC_API_KEY", "")
     if "api_key" not in state:
         state["api_key"] = ""
+    if "custom_base_url" not in state:
+        state["custom_base_url"] = ""
+    if "custom_model_name" not in state:
+        state["custom_model_name"] = ""
     if "auth_validated" not in state:
         state["auth_validated"] = False
     if "responses" not in state:
@@ -242,7 +246,9 @@ def process_input(user_input, state):
         api_key=state["api_key"],
         only_n_most_recent_images=state["only_n_most_recent_images"],
         max_tokens=16384,
-        omniparser_url=args.omniparser_server_url
+        omniparser_url=args.omniparser_server_url,
+        custom_base_url=state["custom_base_url"],
+        custom_model_name=state["custom_model_name"]
     ):  
         if loop_msg is None or state.get("stop"):
             yield state['chatbot_messages']
@@ -331,6 +337,24 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
                     placeholder="Paste your API key here",
                     interactive=True,
                 )
+        with gr.Row():
+            with gr.Column():
+                custom_base_url = gr.Textbox(
+                    label="Custom Base URL (Optional)",
+                    value=state.value.get("custom_base_url", ""),
+                    placeholder="Enter custom API base URL (e.g., https://api.openai.com/v1 or https://api.anthropic.com)",
+                    interactive=True,
+                    info="Leave empty to use default URLs"
+                )
+        with gr.Row():
+            with gr.Column():
+                custom_model_name = gr.Textbox(
+                    label="Custom Model Name (Optional)",
+                    value=state.value.get("custom_model_name", ""),
+                    placeholder="Enter custom model name (e.g., gpt-4o, gpt-4, claude-3-5-sonnet)",
+                    interactive=True,
+                    info="Leave empty to use default model names"
+                )
 
     with gr.Row():
         with gr.Column(scale=8):
@@ -405,6 +429,12 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
         state["api_key"] = api_key_value
         state[f'{state["provider"]}_api_key'] = api_key_value
 
+    def update_custom_base_url(custom_base_url_value, state):
+        state["custom_base_url"] = custom_base_url_value
+
+    def update_custom_model_name(custom_model_name_value, state):
+        state["custom_model_name"] = custom_model_name_value
+
     def clear_chat(state):
         # Reset message-related state
         state["messages"] = []
@@ -417,6 +447,8 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
     only_n_images.change(fn=update_only_n_images, inputs=[only_n_images, state], outputs=None)
     provider.change(fn=update_provider, inputs=[provider, state], outputs=api_key)
     api_key.change(fn=update_api_key, inputs=[api_key, state], outputs=None)
+    custom_base_url.change(fn=update_custom_base_url, inputs=[custom_base_url, state], outputs=None)
+    custom_model_name.change(fn=update_custom_model_name, inputs=[custom_model_name, state], outputs=None)
     chatbot.clear(fn=clear_chat, inputs=[state], outputs=[chatbot])
 
     submit_button.click(process_input, [chat_input, state], chatbot)

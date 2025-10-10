@@ -54,10 +54,12 @@ class AnthropicActor:
         max_tokens: int = 4096,
         only_n_most_recent_images: int | None = None,
         print_usage: bool = True,
+        custom_base_url: str = ""
     ):
         self.model = model
         self.provider = provider
         self.api_key = api_key
+        self.custom_base_url = custom_base_url
         self.api_response_callback = api_response_callback
         self.max_tokens = max_tokens
         self.only_n_most_recent_images = only_n_most_recent_images
@@ -72,7 +74,10 @@ class AnthropicActor:
 
         # Instantiate the appropriate API client based on the provider
         if provider == APIProvider.ANTHROPIC:
-            self.client = Anthropic(api_key=api_key)
+            if custom_base_url:
+                self.client = Anthropic(api_key=api_key, base_url=custom_base_url)
+            else:
+                self.client = Anthropic(api_key=api_key)
         elif provider == APIProvider.VERTEX:
             self.client = AnthropicVertex()
         elif provider == APIProvider.BEDROCK:
