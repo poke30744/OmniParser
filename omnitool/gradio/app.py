@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import cast
 import argparse
 import gradio as gr
+from dotenv import load_dotenv
 from anthropic import APIResponse
 from anthropic.types import TextBlock
 from anthropic.types.beta import BetaMessage, BetaTextBlock, BetaToolUseBlock
@@ -48,6 +49,9 @@ class Sender(StrEnum):
 
 
 def setup_state(state):
+    # Load environment variables from .env file if it exists
+    load_dotenv()
+    
     if "messages" not in state:
         state["messages"] = []
     if "model" not in state:
@@ -59,11 +63,11 @@ def setup_state(state):
     if "anthropic_api_key" not in state:
         state["anthropic_api_key"] = os.getenv("ANTHROPIC_API_KEY", "")
     if "api_key" not in state:
-        state["api_key"] = ""
+        state["api_key"] = os.getenv("API_KEY", "")
     if "custom_base_url" not in state:
-        state["custom_base_url"] = ""
+        state["custom_base_url"] = os.getenv("CUSTOM_BASE_URL", "")
     if "custom_model_name" not in state:
-        state["custom_model_name"] = ""
+        state["custom_model_name"] = os.getenv("CUSTOM_MODEL_NAME", "")
     if "auth_validated" not in state:
         state["auth_validated"] = False
     if "responses" not in state:

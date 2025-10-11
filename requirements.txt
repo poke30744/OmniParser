@@ -32,3 +32,4 @@ dashscope
 groq
 pydantic==2.10.6
 pip-system-certs
+python-dotenv
