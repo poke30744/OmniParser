@@ -399,7 +399,6 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
 
         # Update state
         state["provider"] = default_provider_value
-        state["api_key"] = state.get(f"{default_provider_value}_api_key", "")
 
         # Calls to update other components UI
         provider_update = gr.update(
