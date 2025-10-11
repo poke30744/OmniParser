@@ -379,6 +379,9 @@ if (-not (Get-NetFirewallRule -Name $pythonServerRuleName -ErrorAction SilentlyC
     Write-Host "Firewall rule already exists. $pythonServerRuleName "
 }
 
+# Set execution policy to RemoteSigned to allow running local scripts
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
+
 $onLogonScriptPath = "$scriptFolder\on-logon.ps1"
 # Check if the scheduled task exists before unregistering it
 if (Get-ScheduledTask -TaskName $onLogonTaskName -ErrorAction SilentlyContinue) {
