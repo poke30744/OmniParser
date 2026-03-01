@@ -13,3 +13,4 @@ weights/icon_caption_florence_v2/
 omnitool/gradio/uploads/
 .env
 .venv/
+.env.gpt4o

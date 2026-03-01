@@ -75,16 +75,25 @@ def _message_display_callback(messages):
     display_messages = []
     for msg in messages:
         try:
-            if isinstance(msg["content"][0], TextBlock):
-                display_messages.append((msg["content"][0].text, None))  # User message
-            elif isinstance(msg["content"][0], BetaTextBlock):
-                display_messages.append((None, msg["content"][0].text))  # Bot message
-            elif isinstance(msg["content"][0], BetaToolUseBlock):
-                display_messages.append((None, f"Tool Use: {msg['content'][0].name}\nInput: {msg['content'][0].input}"))  # Bot message
-            elif isinstance(msg["content"][0], Dict) and msg["content"][0]["content"][-1]["type"] == "image":
-                display_messages.append((None, f'<img src="data:image/png;base64,{msg["content"][0]["content"][-1]["source"]["data"]}">'))  # Bot message
+            content = msg.get("content")
+            if not isinstance(content, list) or len(content) == 0:
+                continue
+            first = content[0]
+            if isinstance(first, TextBlock):
+                display_messages.append((first.text, None))  # User message
+            elif isinstance(first, BetaTextBlock):
+                display_messages.append((None, first.text))  # Bot message
+            elif isinstance(first, BetaToolUseBlock):
+                display_messages.append((None, f"Tool Use: {first.name}\nInput: {first.input}"))  # Bot message
+            elif isinstance(first, Dict):
+                # Safe access for image block (content may be list or other structure)
+                inner = first.get("content")
+                if isinstance(inner, list) and len(inner) > 0 and isinstance(inner[-1], dict) and inner[-1].get("type") == "image":
+                    display_messages.append((None, f'<img src="data:image/png;base64,{inner[-1].get("source", {}).get("data", "")}">'))  # Bot message
+                else:
+                    print(first)
             else:
-                print(msg["content"][0])
+                print(first)
         except Exception as e:
             print("error", e)
             pass

@@ -31,7 +31,8 @@ from io import BytesIO
 import gradio as gr
 from typing import Dict
 
-BETA_FLAG = "computer-use-2024-10-22"
+BETA_FLAG_20241022 = "computer-use-2024-10-22"
+BETA_FLAG_20250124 = "computer-use-2025-01-24"
 
 class APIProvider(StrEnum):
     ANTHROPIC = "anthropic"
@@ -54,17 +55,20 @@ class AnthropicActor:
         max_tokens: int = 4096,
         only_n_most_recent_images: int | None = None,
         print_usage: bool = True,
-        custom_base_url: str = ""
+        custom_base_url: str = "",
+        computer_use_beta: str = BETA_FLAG_20241022,
     ):
         self.model = model
         self.provider = provider
         self.api_key = api_key
         self.custom_base_url = custom_base_url
+        self.computer_use_beta = computer_use_beta
         self.api_response_callback = api_response_callback
         self.max_tokens = max_tokens
         self.only_n_most_recent_images = only_n_most_recent_images
-        
-        self.tool_collection = ToolCollection(ComputerTool())
+
+        computer_use_version = "20250124" if computer_use_beta == BETA_FLAG_20250124 else "20241022"
+        self.tool_collection = ToolCollection(ComputerTool(computer_use_version=computer_use_version))
 
         self.system = SYSTEM_PROMPT
         
@@ -101,7 +105,7 @@ class AnthropicActor:
             model=self.model,
             system=self.system,
             tools=self.tool_collection.to_params(),
-            betas=["computer-use-2024-10-22"],
+            betas=[self.computer_use_beta],
         )
 
         self.api_response_callback(cast(APIResponse[BetaMessage], raw_response))

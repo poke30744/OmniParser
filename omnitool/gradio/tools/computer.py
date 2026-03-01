@@ -5,7 +5,10 @@ from typing import Literal, TypedDict
 
 from PIL import Image
 
-from anthropic.types.beta import BetaToolComputerUse20241022Param
+from anthropic.types.beta import (
+    BetaToolComputerUse20241022Param,
+    BetaToolComputerUse20250124Param,
+)
 
 from .base import BaseAnthropicTool, ToolError, ToolResult
 from .screen_capture import get_screenshot
@@ -63,10 +66,12 @@ class ComputerTool(BaseAnthropicTool):
     """
     A tool that allows the agent to interact with the screen, keyboard, and mouse of the current computer.
     Adapted for Windows using 'pyautogui'.
+    Supports computer_20241022 (Claude 3.5 / computer-use-2024-10-22) and
+    computer_20250124 (Sonnet 4.5+ / computer-use-2025-01-24).
     """
 
     name: Literal["computer"] = "computer"
-    api_type: Literal["computer_20241022"] = "computer_20241022"
+    api_type: Literal["computer_20241022", "computer_20250124"] = "computer_20241022"
     width: int
     height: int
     display_num: int | None
@@ -85,11 +90,16 @@ class ComputerTool(BaseAnthropicTool):
             "display_number": self.display_num,
         }
 
-    def to_params(self) -> BetaToolComputerUse20241022Param:
+    def to_params(self) -> BetaToolComputerUse20241022Param | BetaToolComputerUse20250124Param:
         return {"name": self.name, "type": self.api_type, **self.options}
 
-    def __init__(self, is_scaling: bool = False):
+    def __init__(self, is_scaling: bool = False, computer_use_version: str = "20241022"):
         super().__init__()
+
+        if computer_use_version == "20250124":
+            self.api_type = "computer_20250124"
+        else:
+            self.api_type = "computer_20241022"
 
         # Get screen width and height using Windows command
         self.display_num = None
@@ -188,8 +198,6 @@ class ComputerTool(BaseAnthropicTool):
         ):
             if text is not None:
                 raise ToolError(f"text is not accepted for {action}")
-            if coordinate is not None:
-                raise ToolError(f"coordinate is not accepted for {action}")
 
             if action == "screenshot":
                 return await self.screenshot()
@@ -198,6 +206,19 @@ class ComputerTool(BaseAnthropicTool):
                 x, y = self.scale_coordinates(ScalingSource.COMPUTER, x, y)
                 return ToolResult(output=f"X={x},Y={y}")
             else:
+                # Optional coordinate: move to (x, y) then click (API often sends coordinate for click-at-position)
+                if coordinate is not None:
+                    if not isinstance(coordinate, (list, tuple)) or len(coordinate) != 2:
+                        raise ToolError(f"{coordinate} must be a tuple of length 2")
+                    if not all(isinstance(i, int) for i in coordinate):
+                        raise ToolError(f"{coordinate} must be a tuple of ints")
+                    if self.is_scaling:
+                        x, y = self.scale_coordinates(
+                            ScalingSource.API, coordinate[0], coordinate[1]
+                        )
+                    else:
+                        x, y = coordinate
+                    self.send_to_vm(f"pyautogui.moveTo({x}, {y})")
                 if action == "left_click":
                     self.send_to_vm("pyautogui.click()")
                 elif action == "right_click":

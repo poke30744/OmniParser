@@ -16,12 +16,10 @@ from anthropic.types.beta import (
 from tools import ToolResult
 
 from agent.llm_utils.omniparserclient import OmniParserClient
-from agent.anthropic_agent import AnthropicActor
+from agent.anthropic_agent import AnthropicActor, BETA_FLAG_20241022, BETA_FLAG_20250124
 from agent.vlm_agent import VLMAgent
 from agent.vlm_agent_with_orchestrator import VLMOrchestratedAgent
 from executor.anthropic_executor import AnthropicExecutor
-
-BETA_FLAG = "computer-use-2024-10-22"
 
 class APIProvider(StrEnum):
     ANTHROPIC = "anthropic"
@@ -59,15 +57,20 @@ def sampling_loop_sync(
     print('in sampling_loop_sync, model:', model)
     omniparser_client = OmniParserClient(url=f"http://{omniparser_url}/parse/")
     if model == "claude-3-5-sonnet-20241022":
-        # Register Actor and Executor
+        # Register Actor and Executor (use custom_model_name for LiteLLM/proxy when set)
+        # Sonnet 4.5+ requires computer-use-2025-01-24 and computer_20250124
+        effective_model = custom_model_name or model
+        use_new_beta = bool(custom_model_name)
+        computer_use_beta = BETA_FLAG_20250124 if use_new_beta else BETA_FLAG_20241022
         actor = AnthropicActor(
-            model=model, 
+            model=effective_model,
             provider=provider,
-            api_key=api_key, 
+            api_key=api_key,
             api_response_callback=api_response_callback,
             max_tokens=max_tokens,
             only_n_most_recent_images=only_n_most_recent_images,
-            custom_base_url=custom_base_url
+            custom_base_url=custom_base_url,
+            computer_use_beta=computer_use_beta,
         )
     elif model in set(["omniparser + gpt-4o", "omniparser + o1", "omniparser + o3-mini", "omniparser + R1", "omniparser + qwen2.5vl"]):
         actor = VLMAgent(

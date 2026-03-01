@@ -78,9 +78,13 @@ def setup_state(state):
     if "openai_api_key" not in state:  # Fetch API keys from environment variables
         state["openai_api_key"] = os.getenv("OPENAI_API_KEY", "")
     if "anthropic_api_key" not in state:
-        state["anthropic_api_key"] = os.getenv("ANTHROPIC_API_KEY", "")
+        state["anthropic_api_key"] = os.getenv("ANTHROPIC_AUTH_TOKEN") or os.getenv("ANTHROPIC_API_KEY", "")
     if "api_key" not in state:
         state["api_key"] = ""
+    if "custom_base_url" not in state:
+        state["custom_base_url"] = os.getenv("ANTHROPIC_BASE_URL") or os.getenv("CUSTOM_BASE_URL", "")
+    if "custom_model_name" not in state:
+        state["custom_model_name"] = os.getenv("ANTHROPIC_DEFAULT_SONNET_MODEL") or os.getenv("CUSTOM_MODEL_NAME", "")
     if "auth_validated" not in state:
         state["auth_validated"] = False
     if "responses" not in state:
@@ -276,7 +280,9 @@ def process_input(user_input, state):
         only_n_most_recent_images=state["only_n_most_recent_images"],
         max_tokens=16384,
         omniparser_url=args.omniparser_server_url,
-        save_folder=str(RUN_FOLDER)
+        save_folder=str(RUN_FOLDER),
+        custom_base_url=state.get("custom_base_url", ""),
+        custom_model_name=state.get("custom_model_name", ""),
     ):  
         if loop_msg is None or state.get("stop"):
             # Detect and add new files to the state
