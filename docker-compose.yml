@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  omniparser-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: omniparser-server:latest
+    container_name: omniparser-server
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist model caches to avoid re-downloading at runtime
+      - huggingface-cache:/root/.cache/huggingface
+      - paddleocr-cache:/root/.paddleocr
+      - easyocr-cache:/root/.EasyOCR
+      - ultralytics-config:/root/.config/Ultralytics
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/probe/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  huggingface-cache:
+  paddleocr-cache:
+  easyocr-cache:
+  ultralytics-config:
