@@ -14,3 +14,4 @@ omnitool/gradio/uploads/
 .env
 .venv/
 .env.gpt4o
+.env.claude
