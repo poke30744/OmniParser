@@ -454,7 +454,10 @@ def get_som_labeled_img(image_source: Union[str, Image.Image], model=None, BOX_T
     filtered_boxes_elem = sorted(filtered_boxes, key=lambda x: x['content'] is None)
     # get the index of the first 'content': None
     starting_idx = next((i for i, box in enumerate(filtered_boxes_elem) if box['content'] is None), -1)
-    filtered_boxes = torch.tensor([box['bbox'] for box in filtered_boxes_elem])
+    if filtered_boxes_elem:
+        filtered_boxes = torch.tensor([box['bbox'] for box in filtered_boxes_elem])
+    else:
+        filtered_boxes = torch.empty((0, 4), dtype=torch.float32)
     print('len(filtered_boxes):', len(filtered_boxes), starting_idx)
 
     # get parsed icon local semantics
@@ -470,7 +473,7 @@ def get_som_labeled_img(image_source: Union[str, Image.Image], model=None, BOX_T
         parsed_content_icon_ls = []
         # fill the filtered_boxes_elem None content with parsed_content_icon in order
         for i, box in enumerate(filtered_boxes_elem):
-            if box['content'] is None:
+            if box['content'] is None and parsed_content_icon:
                 box['content'] = parsed_content_icon.pop(0)
         for i, txt in enumerate(parsed_content_icon):
             parsed_content_icon_ls.append(f"Icon Box ID {str(i+icon_start)}: {txt}")
